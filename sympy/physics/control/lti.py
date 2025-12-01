@@ -5306,58 +5306,28 @@ class TransferFunctionMatrix(MIMOLinearTimeInvariant):
         return _to_TFM(simp_mat, self.var, self.sampling_time)
 
     def expand(self, **hints):
-        """Expands the transfer function matrix"""
+        """
+        Return a TransferFunctionMatrix with each element's expression expanded.
+        
+        The underlying expression matrix is expanded using SymPy's expand with the provided hints, then converted back into a TransferFunctionMatrix preserving the instance's transform variable and sampling time.
+        
+        Returns:
+            TransferFunctionMatrix: the expanded transfer function matrix.
+        """
         expand_mat = self._expr_mat.expand(**hints)
         return _to_TFM(expand_mat, self.var, self.sampling_time)
 
     def _eval_rewrite_as_StateSpace(self, *args):
         """
-        Converts a continuous-time MIMO transfer function matrix to an 
-        equivalent state-space model.
-
-        This method converts each transfer function in the matrix to its
-        state-space representation and combines them into a single MIMO
-        state-space system.
-
-        Examples
-        ========
-
-        >>> from sympy.abc import s
-        >>> from sympy.physics.control import TransferFunction, TransferFunctionMatrix, StateSpace
-        >>> tf1 = TransferFunction(2, s + 1, s)
-        >>> tf2 = TransferFunction(1, 2*s + 1, s)
-        >>> G_tf = TransferFunctionMatrix([[tf1], [tf2]])
-        >>> ss = G_tf.rewrite(StateSpace)
-        >>> ss
-        StateSpace(Matrix([
-        [-1,    0],
-        [ 0, -1/2]]), Matrix([
-        [1],
-        [1]]), Matrix([
-        [2, 0],
-        [0, 1]]), Matrix([
-        [0],
-        [0]]))
-        >>> ss.num_states
-        2
-        >>> ss.num_inputs
-        1
-        >>> ss.num_outputs
-        2
-
-        For a MIMO (Multiple Input Multiple Output) system:
-
-        >>> tf3 = TransferFunction(3, s + 2, s)
-        >>> tf4 = TransferFunction(1, s + 3, s)
-        >>> G_mimo = TransferFunctionMatrix([[tf1, tf3], [tf2, tf4]])
-        >>> ss_mimo = G_mimo.rewrite(StateSpace)
-        >>> ss_mimo.num_states
-        4
-        >>> ss_mimo.num_inputs
-        2
-        >>> ss_mimo.num_outputs
-        2
-
+        Convert a continuous-time MIMO transfer function matrix to an equivalent StateSpace model.
+        
+        Each element of the transfer-function matrix is converted to its continuous-time state-space representation and the per-element state-space blocks are assembled into a single aggregated StateSpace with block-diagonal A, appropriately stacked B and C, and feedthrough D.
+        
+        Returns:
+            state_space (StateSpace): The aggregated continuous-time state-space model.
+        
+        Raises:
+            TypeError: If the transfer function matrix is discrete-time.
         """
         if not self._is_continuous:
             raise TypeError(
@@ -5416,56 +5386,16 @@ class TransferFunctionMatrix(MIMOLinearTimeInvariant):
 
     def _eval_rewrite_as_DiscreteStateSpace(self, *args):
         """
-        Converts a discrete-time MIMO transfer function matrix to an 
-        equivalent discrete state-space model.
-
-        This method converts each transfer function in the matrix to its
-        state-space representation and combines them into a single MIMO
-        discrete state-space system.
-
-        Examples
-        ========
-
-        >>> from sympy.abc import z
-        >>> from sympy.physics.control import DiscreteTransferFunction, TransferFunctionMatrix, DiscreteStateSpace
-        >>> dtf1 = DiscreteTransferFunction(2, z + 1, z, 0.1)
-        >>> dtf2 = DiscreteTransferFunction(1, 2*z + 1, z, 0.1)
-        >>> G_dtf = TransferFunctionMatrix([[dtf1], [dtf2]])
-        >>> dss = G_dtf.rewrite(DiscreteStateSpace)
-        >>> dss
-        DiscreteStateSpace(Matrix([
-        [-1,    0],
-        [ 0, -1/2]]), Matrix([
-        [1],
-        [1]]), Matrix([
-        [2, 0],
-        [0, 1]]), Matrix([
-        [0],
-        [0]]), 0.1)
-        >>> dss.num_states
-        2
-        >>> dss.num_inputs
-        1
-        >>> dss.num_outputs
-        2
-        >>> dss.sampling_time
-        0.1
-
-        For a MIMO (Multiple Input Multiple Output) discrete system:
-
-        >>> dtf3 = DiscreteTransferFunction(3, z + 2, z, 0.1)
-        >>> dtf4 = DiscreteTransferFunction(1, z + 3, z, 0.1)
-        >>> G_mimo = TransferFunctionMatrix([[dtf1, dtf3], [dtf2, dtf4]])
-        >>> dss_mimo = G_mimo.rewrite(DiscreteStateSpace)
-        >>> dss_mimo.num_states
-        4
-        >>> dss_mimo.num_inputs
-        2
-        >>> dss_mimo.num_outputs
-        2
-        >>> dss_mimo.sampling_time
-        0.1
-
+        Convert this discrete-time TransferFunctionMatrix into an equivalent DiscreteStateSpace.
+        
+        Each element transfer function is rewritten to a DiscreteStateSpace and the per-element
+        A, B, C, D blocks are assembled into a single block-diagonal/state-aggregated
+        discrete-time state-space model with the same sampling time as this matrix.
+        
+        Returns:
+            DiscreteStateSpace: aggregated discrete-time state-space model whose number
+            of states equals the sum of per-element states, with matching input/output
+            dimensions and the same sampling_time as this TransferFunctionMatrix.
         """
         if self._is_continuous:
             raise TypeError(
@@ -5524,6 +5454,12 @@ class TransferFunctionMatrix(MIMOLinearTimeInvariant):
 
     @property
     def sampling_time(self):
+        """
+        Return the sampling time shared by all elements in this transfer-function matrix.
+        
+        Returns:
+            sampling_time: The sampling period of the matrix's elements (zero for continuous-time systems).
+        """
         return self.args[0][0][0].sampling_time
 
 def create_state_space(A, B, C, D, sampling_time=0):

@@ -4894,6 +4894,13 @@ def test_DiscreteStateSpace_feedback():
     raises(TypeError, lambda: MIMOFeedback(ss3, cont_ss2))  # feedback with continuous state space
 
 def test_DiscreteStateSpace_stability():
+    """
+    Test asymptotic stability condition extraction for DiscreteStateSpace systems.
+    
+    Constructs two discrete state-space systems: one parameterized by k and verifies that
+    get_asymptotic_stability_conditions() returns the expected polynomial inequalities in k;
+    the second with fixed matrix entries is verified to produce a single `False` condition.
+    """
     k = symbols('k')
     B = Matrix([1, 0, 0])
     C = Matrix([[0, 1, 0]])
@@ -4955,4 +4962,3 @@ def test_TransferFunctionMatrix_to_StateSpace():
     
     # Test error when trying to convert discrete TFM to continuous StateSpace
     raises(TypeError, lambda: G_dtf.rewrite(StateSpace))
-
